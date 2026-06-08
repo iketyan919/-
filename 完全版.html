@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUZURI Local Buddy & Fes | 鹿児島発・地域共創型クエスト</title>
+<!-- ドット絵風フォントの読み込み -->
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap" rel="stylesheet">
+<style>
+       /* === ベース設定（RPG風） === */
+       :root {
+           --rpg-bg: #0a0a2a;
+           --rpg-text: #ffffff;
+           --rpg-window: #000080;
+           --rpg-border: #ffffff;
+           --accent-pink: #ff007f;
+           --accent-cyan: #00ffff;
+           --accent-gold: #ffd700;
+       }
+       body {
+           margin: 0;
+           padding: 0;
+           font-family: 'DotGothic16', sans-serif;
+           background-color: var(--rpg-bg);
+           color: var(--rpg-text);
+           /* ドット風のカーソル（剣の絵文字をSVG化して指定） */
+           cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" style="font-size: 20px;"><text y="20">🗡️</text></svg>'), auto;
+           overflow-x: hidden;
+           line-height: 1.6;
+       }
+       /* RPG風ウィンドウ（枠線）の共通クラス */
+       .rpg-window {
+           background-color: var(--rpg-window);
+           border: 4px solid var(--rpg-border);
+           border-radius: 4px;
+           padding: 20px;
+           box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.8), inset 2px 2px 0px rgba(255, 255, 255, 0.3);
+           position: relative;
+       }
+       .container {
+           max-width: 900px;
+           margin: 0 auto;
+           padding: 0 20px;
+       }
+       /* === ヒーローセクション（タイトル画面） === */
+       .hero {
+           height: 100vh;
+           display: flex;
+           flex-direction: column;
+           justify-content: center;
+           align-items: center;
+           text-align: center;
+           background: repeating-linear-gradient(
+               0deg,
+               #0a0a2a,
+               #0a0a2a 2px,
+               #000000 2px,
+               #000000 4px
+           );
+       }
+       .title-logo {
+           font-size: 4rem;
+           color: var(--accent-gold);
+           text-shadow: 4px 4px 0px var(--accent-pink), 8px 8px 0px var(--accent-cyan);
+           margin-bottom: 20px;
+           line-height: 1.2;
+           animation: float 3s ease-in-out infinite;
+       }
+       @keyframes float {
+           0%, 100% { transform: translateY(0); }
+           50% { transform: translateY(-15px); }
+       }
+       .subtitle {
+           font-size: 1.2rem;
+           color: var(--accent-cyan);
+           margin-bottom: 50px;
+       }
+       .blink-text {
+           font-size: 1.5rem;
+           animation: blink 1s step-end infinite;
+           cursor: pointer;
+           color: var(--accent-gold);
+       }
+       @keyframes blink {
+           50% { opacity: 0; }
+       }
+       /* === 各セクション共通 === */
+       .section {
+           padding: 80px 0;
+       }
+       .section-title {
+           text-align: center;
+           font-size: 2.2rem;
+           color: var(--accent-gold);
+           margin-bottom: 40px;
+       }
+       /* === 課題セクション（NPCのセリフ風） === */
+       .dialogue-container {
+           display: flex;
+           gap: 20px;
+           flex-wrap: wrap;
+           justify-content: center;
+       }
+       .dialogue-box {
+           width: 100%;
+           max-width: 400px;
+           display: flex;
+           gap: 15px;
+           align-items: flex-start;
+       }
+       .character-icon {
+           font-size: 3rem;
+           background: #000;
+           border: 2px solid white;
+           padding: 10px;
+           border-radius: 5px;
+           animation: bounce 2s infinite;
+       }
+       @keyframes bounce {
+           0%, 100% { transform: translateY(0); }
+           50% { transform: translateY(-5px); }
+       }
+       /* === メリットセクション === */
+       .merit-grid {
+           display: flex;
+           gap: 20px;
+           justify-content: center;
+           flex-wrap: wrap;
+       }
+       .merit-card {
+           width: 100%;
+           max-width: 420px;
+       }
+       .merit-card h3 {
+           border-bottom: 2px dashed rgba(255,255,255,0.5);
+           padding-bottom: 10px;
+           margin-bottom: 15px;
+           text-align: center;
+           font-size: 1.4rem;
+       }
+       .merit-list {
+           list-style: none;
+           padding: 0;
+           margin: 0;
+           font-size: 1.1rem;
+       }
+       .merit-list li {
+           margin-bottom: 15px;
+           padding-left: 25px;
+           position: relative;
+       }
+       .merit-list li::before {
+           content: '★';
+           color: var(--accent-pink);
+           position: absolute;
+           left: 0;
+           top: 0;
+       }
+       .merit-highlight {
+           color: var(--accent-gold);
+           font-weight: bold;
+       }
+       /* === ぼうけんのみちのり（クエストステップ） === */
+       .quest-list {
+           list-style: none;
+           padding: 0;
+           margin: 0;
+       }
+       .quest-item {
+           margin-bottom: 20px;
+           padding: 15px;
+           border-bottom: 2px dashed rgba(255,255,255,0.3);
+           display: flex;
+           align-items: flex-start;
+           transition: all 0.2s;
+       }
+       .quest-item:hover {
+           background-color: rgba(255,255,255,0.1);
+           transform: scale(1.02);
+           padding-left: 30px;
+       }
+       .quest-item::before {
+           content: '▶';
+           color: var(--accent-pink);
+           margin-right: 15px;
+           font-size: 1.2rem;
+           opacity: 0;
+           margin-top: 3px;
+       }
+       .quest-item:hover::before {
+           opacity: 1;
+       }
+       .quest-step-num {
+           color: var(--accent-gold);
+           font-weight: bold;
+           margin-right: 20px;
+           font-size: 1.2rem;
+           min-width: 30px;
+           margin-top: 3px;
+       }
+       /* === クエスト詳細・ステータス === */
+       .details-table {
+           width: 100%;
+           border-collapse: collapse;
+           font-size: 1.2rem;
+       }
+       .details-table th {
+           text-align: left;
+           padding: 15px 10px;
+           color: var(--accent-cyan);
+           border-bottom: 1px dashed rgba(255,255,255,0.3);
+           width: 25%;
+           vertical-align: top;
+       }
+       .details-table td {
+           padding: 15px 10px;
+           border-bottom: 1px dashed rgba(255,255,255,0.3);
+       }
+       .details-table tr:last-child th,
+       .details-table tr:last-child td {
+           border-bottom: none;
+       }
+       .status-container {
+           display: flex;
+           gap: 30px;
+           flex-wrap: wrap;
+           align-items: center;
+       }
+       .status-avatar {
+           flex: 1;
+           min-width: 200px;
+           text-align: center;
+           background: #000;
+           border: 2px solid var(--accent-gold);
+           padding: 20px;
+           border-radius: 10px;
+       }
+       .status-info {
+           flex: 2;
+           min-width: 300px;
+       }
+       .skill-list {
+           list-style: none;
+           padding: 0;
+           margin: 0;
+           font-size: 1.2rem;
+       }
+       .skill-list li {
+           padding: 8px 0;
+           border-bottom: 1px solid rgba(255,255,255,0.1);
+           display: flex;
+           justify-content: space-between;
+       }
+       .skill-list li:hover {
+           background-color: rgba(255,255,255,0.1);
+       }
+       /* === フェスセクション（パリピ＆熱狂） === */
+       .fes-section {
+           background: linear-gradient(135deg, #2b0055, #6a0035);
+           padding: 100px 0;
+           position: relative;
+           overflow: hidden;
+           text-align: center;
+       }
+       .fes-title {
+           font-size: 3.5rem;
+           color: #fff;
+           text-shadow: 0 0 10px var(--accent-pink), 0 0 20px var(--accent-pink), 0 0 40px var(--accent-pink);
+           margin-bottom: 20px;
+           transform: rotate(-2deg);
+       }
+       .marquee {
+           width: 100%;
+           background: var(--accent-cyan);
+           color: #000;
+           padding: 10px 0;
+           font-weight: bold;
+           font-size: 1.5rem;
+           white-space: nowrap;
+           overflow: hidden;
+           position: absolute;
+           top: 0;
+           left: 0;
+       }
+       .marquee span {
+           display: inline-block;
+           padding-left: 100%;
+           animation: marquee 15s linear infinite;
+       }
+       @keyframes marquee {
+           0% { transform: translateX(0); }
+           100% { transform: translateX(-100%); }
+       }
+       .floating-emojis {
+           font-size: 3rem;
+           position: absolute;
+           bottom: -50px;
+           animation: flyUp 4s linear infinite;
+       }
+       .e1 { left: 10%; animation-delay: 0s; }
+       .e2 { left: 30%; animation-delay: 1.5s; font-size: 4rem; }
+       .e3 { left: 60%; animation-delay: 0.5s; }
+       .e4 { left: 80%; animation-delay: 2s; font-size: 5rem; }
+       @keyframes flyUp {
+           0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+           100% { transform: translateY(-500px) rotate(360deg); opacity: 0; }
+       }
+       .fes-grid {
+           display: flex;
+           gap: 20px;
+           justify-content: center;
+           margin-top: 50px;
+           position: relative;
+           z-index: 10;
+       }
+       .fes-card {
+           background: rgba(0, 0, 0, 0.6);
+           border: 2px solid var(--accent-cyan);
+           padding: 20px;
+           width: 250px;
+           border-radius: 10px;
+           box-shadow: 0 0 15px var(--accent-cyan);
+           transition: transform 0.3s;
+       }
+       .fes-card:hover {
+           transform: translateY(-15px) scale(1.05);
+           background: rgba(0, 0, 0, 0.8);
+           border-color: var(--accent-pink);
+           box-shadow: 0 0 20px var(--accent-pink);
+       }
+       /* === エントリーフォーム（ギルド登録所） === */
+       .guild-form {
+           display: flex;
+           flex-direction: column;
+           gap: 20px;
+       }
+       .form-group {
+           display: flex;
+           flex-direction: column;
+           gap: 5px;
+       }
+       .form-group label {
+           color: var(--accent-cyan);
+       }
+       .form-group input, .form-group select {
+           font-family: 'DotGothic16', sans-serif;
+           font-size: 1.2rem;
+           background: #000;
+           color: #fff;
+           border: 2px solid #fff;
+           padding: 10px;
+           outline: none;
+       }
+       .form-group input:focus, .form-group select:focus {
+           border-color: var(--accent-pink);
+           background: #111;
+       }
+       .submit-btn {
+           font-family: 'DotGothic16', sans-serif;
+           background: var(--accent-pink);
+           color: #fff;
+           font-size: 1.5rem;
+           border: 4px solid #fff;
+           padding: 15px;
+           cursor: pointer;
+           margin-top: 20px;
+           box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+           transition: all 0.1s;
+       }
+       .submit-btn:active {
+           transform: translate(4px, 4px);
+           box-shadow: 0px 0px 0px rgba(0,0,0,0.5);
+       }
+       #levelUpModal {
+           display: none;
+           position: fixed;
+           top: 0; left: 0; width: 100%; height: 100%;
+           background: rgba(0,0,0,0.8);
+           z-index: 999;
+           justify-content: center;
+           align-items: center;
+       }
+       .modal-content {
+           text-align: center;
+           animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+       }
+       @keyframes popIn {
+           0% { transform: scale(0); }
+           100% { transform: scale(1); }
+       }
+</style>
+</head>
+<body>
+<!-- ヒーローセクション（タイトル画面） -->
+<header class="hero">
+<div class="title-logo">SUZURI<br>Local Buddy & Fes</div>
+<div class="subtitle">〜 鹿児島発・地域共創型マーチャンダイジングと熱狂の祭典 〜</div>
+<div class="blink-text" onclick="document.getElementById('guild-form').scrollIntoView({behavior: 'smooth'})">
+           ▶ PUSH START ◀<br>
+<span style="font-size: 1rem; color: #fff;">（ギルドに登録する）</span>
+</div>
+</header>
+<!-- 課題セクション（街の人の声） -->
+<section class="section container">
+<h2 class="section-title">＊ まちのひとの こえ ＊</h2>
+<div class="dialogue-container">
+<div class="dialogue-box">
+<div class="character-icon">👴</div>
+<div class="rpg-window">
+<p>「わしらの農園のファンを作りたいんじゃが、ITとかデザインはさっぱりでなぁ…。プロに頼む予算もないんじゃ。」</p>
+</div>
+</div>
+<div class="dialogue-box">
+<div class="character-icon">🧑‍🎓</div>
+<div class="rpg-window">
+<p>「ビジネスやマーケティングを実践してみたいけど、地方にはアウトプットできる挑戦の場が少ないんだよな…。」</p>
+</div>
+</div>
+</div>
+</section>
+<!-- メリットセクション（得られる経験値） -->
+<section class="section container">
+<h2 class="section-title">＊ えられる けいけんち（メリット） ＊</h2>
+<div class="merit-grid">
+<div class="merit-card rpg-window">
+<h3 style="color: var(--accent-cyan);">🎓 学生バディのメリット</h3>
+<ul class="merit-list">
+<li><span class="merit-highlight">超・実践的マーケティング:</span> 机上の空論ではない、リアルなビジネス経験値（XP）が積める！</li>
+<li><span class="merit-highlight">AI＆デザインスキルの獲得:</span> 最先端の生成AIツールを使いこなし、アイデアを形にする魔法を習得！</li>
+<li><span class="merit-highlight">圧倒的なアウトプット実績:</span> 「ゼロから企画・販売し、組織を動かした」という就活最強の武器に！</li>
+</ul>
+</div>
+<div class="merit-card rpg-window">
+<h3 style="color: var(--accent-gold);">🏬 企業・農家のメリット</h3>
+<ul class="merit-list">
+<li><span class="merit-highlight">ノーリスクでブランド展開:</span> 初期費用・在庫リスク「完全ゼロ」でオリジナルグッズ化！</li>
+<li><span class="merit-highlight">若者＆AIの新しい視点:</span> 自分たちでは気づかなかった「隠れた魅力」を最新技術で発掘・発信！</li>
+<li><span class="merit-highlight">熱狂的なファン層の開拓:</span> オンライン販売とリアルフェスの相乗効果で、新たな地元ファンを獲得！</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- ぼうけんのみちのり（クエストステップ）セクション -->
+<section class="section container">
+<h2 class="section-title">＊ ぼうけんの みちのり ＊</h2>
+<div class="rpg-window">
+<p style="text-align: center; margin-bottom: 20px; color: var(--accent-cyan);">学生と企業がバディを組み、5つのステップでクリアを目指すぞ！</p>
+<ul class="quest-list">
+<li class="quest-item">
+<span class="quest-step-num">①</span>
+<div>
+<strong style="color: var(--accent-pink); font-size: 1.2rem;">パーティ結成&資産発掘</strong><br>
+                       学生と企業がバディを結成。独自のヒアリングシートを用いて、企業が気づいていないアナログな「隠れた魅力やストーリー」を丁寧に引き出します。
+</div>
+</li>
+<li class="quest-item">
+<span class="quest-step-num">②</span>
+<div>
+<strong style="color: var(--accent-pink); font-size: 1.2rem;">AI魔法クラフト</strong><br>
+                       画像生成AIを「魔法の補助線」として活用。学生がプロンプトを工夫し、企業の想いやストーリーを一瞬でハイクオリティなデザインへと物質化します。
+</div>
+</li>
+<li class="quest-item">
+<span class="quest-step-num">③</span>
+<div>
+<strong style="color: var(--accent-pink); font-size: 1.2rem;">SUZURIショップ実装</strong><br>
+                       SUZURIを活用し、初期費用・在庫リスク完全ゼロでショップを開設。AIが魅力的な紹介文を自動生成し、手放しで販売できる体制を整えます。
+</div>
+</li>
+<li class="quest-item">
+<span class="quest-step-num">④</span>
+<div>
+<strong style="color: var(--accent-pink); font-size: 1.2rem;">初戦突破（販売&ファン化）</strong><br>
+                       店頭POPやSNSを組み合わせ、まずは「3個」を確実に売り切るローカルマーケティングを展開。売れる喜び＝最高の経験値（XP）を共有します。
+</div>
+</li>
+<li class="quest-item" style="background: rgba(255,0,127,0.15); border: 1px solid var(--accent-pink); box-shadow: 0 0 10px rgba(255,0,127,0.5);">
+<span class="quest-step-num" style="color: #fff;">⑤</span>
+<div>
+<strong style="color: var(--accent-gold); font-size: 1.3rem;">フェスでのオフライン販売</strong><br>
+                       最終クエストはオンラインを飛び出したリアル空間の広場！参加企業が集結し、特製キッチンカーの地元グルメを味わいながら、自分たちが作ったグッズが目の前で売れていく圧倒的な熱狂と感動を共有します！
+</div>
+</li>
+</ul>
+</div>
+</section>
+<!-- クエスト（イベント詳細）セクション -->
+<section class="section container">
+<h2 class="section-title">＊ クエストの しょうさい ＊</h2>
+<div class="rpg-window">
+<table class="details-table">
+<tr>
+<th>▶ がいよう</th>
+<td>地元企業と学生がバディを組み、SUZURIで作成したオリジナルグッズのオンライン販売・PRを実施。最終月にはグッズの展示・即売会と地元食材を使ったキッチンカーが出店する地域共創フェスを開催します。</td>
+</tr>
+<tr>
+<th>▶ にちじ</th>
+<td>
+                       【バディ活動期間】 20XX年 X月 〜 X月<br>
+                       【フェス開催日】 20XX年 X月X日(土) 10:00 〜 17:00
+</td>
+</tr>
+<tr>
+<th>▶ ばしょ</th>
+<td>霧島市内の特設広場（※予定）</td>
+</tr>
+<tr>
+<th>▶ しゅさい</th>
+<td>SUZURI Local Buddy プロジェクト実行委員会<br>（連携：第一工科大学 ほか）</td>
+</tr>
+</table>
+</div>
+</section>
+<!-- フェスセクション（熱狂空間） -->
+<section class="fes-section">
+<div class="marquee"><span>🎆 KAGOSHIMA OUTPUT FES!!! 🍔 デジタルとリアルが交差する熱狂の祭典 👕 SUZURI LOCAL BUDDY & FES 🎆</span></div>
+<div class="floating-emojis e1">🎆</div>
+<div class="floating-emojis e2">🍔</div>
+<div class="floating-emojis e3">👕</div>
+<div class="floating-emojis e4">🍻</div>
+<div class="container">
+<h2 class="fes-title">鹿児島<br>アウトプット・フェス</h2>
+<p style="color: #fff; font-size: 1.2rem; font-weight: bold;">最終月は広場を貸し切り！<br>オンラインを飛び出したリアルな熱狂を創出！</p>
+<div class="fes-grid">
+<div class="fes-card">
+<h3 style="color: var(--accent-gold);">🚚 特製キッチンカー</h3>
+<p style="color: #ddd;">参加農家の野菜や地元飲食店の特別メニューを提供。五感で楽しむお祭り空間！</p>
+</div>
+<div class="fes-card">
+<h3 style="color: var(--accent-cyan);">📱 QR即売システム</h3>
+<p style="color: #ddd;">展示グッズのQRコードからSUZURI経由でその場で購入。在庫リスクゼロのリアル物販！</p>
+</div>
+<div class="fes-card">
+<h3 style="color: var(--accent-pink);">🤝 ファンとの直接交流</h3>
+<p style="color: #ddd;">SNSで奮闘記を見ていたファンと直接交流。一生モノの「つながり」が生まれる！</p>
+</div>
+</div>
+</div>
+</section>
+<!-- 主催者ステータス（プロフィール） -->
+<section class="section container">
+<h2 class="section-title">＊ ほっきにんの ステータス ＊</h2>
+<div class="rpg-window status-container">
+<div class="status-avatar">
+<div style="font-size: 5rem; margin-bottom: 10px;">👑</div>
+<div style="color: var(--accent-gold); font-size: 1.2rem;">ギルドマスター</div>
+</div>
+<div class="status-info">
+<table style="width: 100%; font-size: 1.2rem; line-height: 2;">
+<tr><td style="color: var(--accent-cyan); width: 35%;">【なまえ】</td><td>池ちゃん</td></tr>
+<tr><td style="color: var(--accent-cyan);">【しょくぎょう】</td><td>リーダーシップ経験豊富な大学生</td></tr>
+<tr><td style="color: var(--accent-cyan);">【しょぞく】</td><td>第一工科大学ギルド</td></tr>
+</table>
+<hr style="border-top: 2px dashed #555; margin: 20px 0;">
+<div style="color: var(--accent-gold); margin-bottom: 10px; font-size: 1.2rem;">▼ もっている スキル</div>
+<ul class="skill-list">
+<li>① ゼロから組織を立ち上げる <span style="color: #fff;">Lv.85</span></li>
+<li>② 周囲を巻き込む <span style="color: #fff;">Lv.90</span></li>
+<li>③ 現状維持への抵抗力 <span style="color: #fff;">Lv.99</span></li>
+<li>④ おもしろさへの追求 <span style="color: var(--accent-pink); font-weight: bold; text-shadow: 0 0 5px var(--accent-pink);">Lv.測定不能</span></li>
+<li style="color: #aaa; font-size: 1rem;">⑤ プログラミング呪文（Python等） <span style="color: #aaa;">Lv.80</span></li>
+<li style="color: #aaa; font-size: 1rem;">⑥ AI・ディープラーニング錬金術 <span style="color: #aaa;">Lv.75</span></li>
+</ul>
+</div>
+</div>
+</section>
+<!-- エントリーフォーム（ギルド登録所） -->
+<section id="guild-form" class="form-section container" style="padding-bottom: 100px;">
+<h2 class="section-title">＊ ギルド とうろくじょ ＊</h2>
+<div class="rpg-window">
+<p style="text-align: center; margin-bottom: 30px;">新たな冒険者よ、お主の情報をここに記すのじゃ。</p>
+<form class="guild-form" onsubmit="event.preventDefault(); showLevelUp();">
+<div class="form-group">
+<label>▶ クラス（属性）をえらぶ</label>
+<select required>
+<option value="">▼ 選択してください</option>
+<option value="student">地元学生（伴走バディ希望）</option>
+<option value="company">地元企業・農家（グッズ化希望）</option>
+</select>
+</div>
+<div class="form-group">
+<label>▶ ゆうしゃの なまえ（氏名 / 団体名）</label>
+<input type="text" placeholder="例：ぺぱぼ たろう" required>
+</div>
+<div class="form-group">
+<label>▶ れんらくの のろし（メールアドレス）</label>
+<input type="email" placeholder="example@pepabo.com" required>
+</div>
+<div class="form-group">
+<label>▶ ぼうけんの もくひょう（意気込み）</label>
+<input type="text" placeholder="鹿児島を一番アウトプットが盛んな街にしたい！" required>
+</div>
+<button type="submit" class="submit-btn">クエストを受注する ⚔️</button>
+</form>
+</div>
+</section>
+<!-- レベルアップ演出（JS） -->
+<div id="levelUpModal">
+<div class="modal-content rpg-window" style="background-color: var(--accent-pink); color: #fff;">
+<h2 style="font-size: 3rem; margin: 0 0 20px 0;">LEVEL UP!!</h2>
+<p style="font-size: 1.5rem;">ギルドへの登録が完了した！<br>鹿児島を盛り上げる冒険が、いま始まる！</p>
+<button class="submit-btn" style="background: #000; border-color: #000;" onclick="closeLevelUp()">冒険へ出発する</button>
+</div>
+</div>
+<script>
+       // クエスト受注（フォーム送信）時のレベルアップ演出
+       function showLevelUp() {
+           document.getElementById('levelUpModal').style.display = 'flex';
+       }
+       function closeLevelUp() {
+           document.getElementById('levelUpModal').style.display = 'none';
+           alert('（※これは面接用プロトタイプのため、実際の送信は行われません）');
+       }
+</script>
+</body>
+</html>
